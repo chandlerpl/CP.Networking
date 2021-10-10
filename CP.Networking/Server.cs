@@ -7,21 +7,26 @@ using System.Text;
 
 namespace CP.Networking
 {
+    /**
+     * Need to tidy this up and implement some way for client-server-client communication routing.
+     * 
+     * Going to put this here for now but will move to do list later: Potentially add a mesh-capable networking solution with client-client routing (not multiplayer related).
+     */
     public class Server
     {
         private TcpListener _server;
-        private int _maxPlayers;
+        private int _maxClients;
         private int _port;
         private int _bufferSize;
 
         private List<ServerClient> _clients;
         public int ClientCount {  get { return _clients.Count; } }
 
-        public Server(int port, int maxPlayers, int bufferSize = 16384)
+        public Server(int port, int maxClients, int bufferSize = 16384)
         {
             _bufferSize = bufferSize;
-            _maxPlayers = maxPlayers;
-            _clients = new List<ServerClient>(maxPlayers);
+            _maxClients = maxClients;
+            _clients = new List<ServerClient>(maxClients);
 
             _server = new TcpListener(IPAddress.Parse("127.0.0.1"), port);
             _server.Start();
@@ -36,7 +41,7 @@ namespace CP.Networking
                 TcpClient client = _server.EndAcceptTcpClient(ar);
                 _server.BeginAcceptTcpClient(AcceptClient, null);
 
-                if (_clients.Count < _maxPlayers)
+                if (_clients.Count < _maxClients)
                 {
                     ServerClient sClient = new ServerClient(this, client, _bufferSize);
 

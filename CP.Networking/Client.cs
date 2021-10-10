@@ -83,16 +83,15 @@ namespace CP.Networking
                 if (byteLength <= 0)
                 {
                     Disconnect();
-                    //TODO: Add a connection ended function for easily handling disconnects.
-                    //Debug.Log("Disconnected from the server!");
+                    //TODO: Add a connection ended function for easily handling disconnects, Callbacks are most likely.
+                    Logger.Log("Disconnected from the server!");
                     return;
                 }
 
                 string s = _encoding.GetString(_buffer, 0, byteLength);
 
+                //TODO: Add a proper system for handling incoming messages, command system seems most plausible.
                 Logger.Log(s);
-                //dataDebugger.DebugData(s, "from the server");
-                //dataHandler.HandleData(s);
 
                 _stream.BeginRead(_buffer, 0, _bufferSize, Receive, null);
             } 
