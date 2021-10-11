@@ -14,6 +14,9 @@ namespace CP.Networking
      */
     public class Server
     {
+        public Action onClientConnected;
+        public Action onClientDisconnected;
+
         private TcpListener _server;
         private int _maxClients;
         private int _port;
@@ -22,6 +25,12 @@ namespace CP.Networking
         private List<ServerClient> _clients;
         public int ClientCount {  get { return _clients.Count; } }
 
+        /// <summary>
+        /// Creates a new instance for the TCP Server with the given port.
+        /// </summary>
+        /// <param name="port">The port that the server listens for clients on.</param>
+        /// <param name="maxClients">The maximum number of clients that can be connected at one time.</param>
+        /// <param name="bufferSize">The size, in bytes, of the buffer for incoming and outgoing messages.</param>
         public Server(int port, int maxClients, int bufferSize = 16384)
         {
             _bufferSize = bufferSize;
@@ -34,7 +43,7 @@ namespace CP.Networking
             _server.BeginAcceptTcpClient(AcceptClient, null);
         }
 
-        public void AcceptClient(IAsyncResult ar)
+        protected void AcceptClient(IAsyncResult ar)
         {
             try
             {
@@ -44,12 +53,14 @@ namespace CP.Networking
                 if (_clients.Count < _maxClients)
                 {
                     ServerClient sClient = new ServerClient(this, client, _bufferSize);
+                    sClient.onDisconnect += () => { RemoveClient(sClient); };
+
+                    onClientConnected?.Invoke();
 
                     _clients.Add(sClient);
                 }
                 else
                 {
-
                     client.Close();
                     client.Dispose();
                 }
@@ -61,11 +72,20 @@ namespace CP.Networking
             }
         }
 
+        /// <summary>
+        /// Removes a client from the servers internal list, this should only be called when a client connection has been closed.
+        /// </summary>
+        /// <param name="client">The client to remove from the list.</param>
         public void RemoveClient(ServerClient client)
         {
+            onClientDisconnected?.Invoke();
             _clients.Remove(client);
         }
 
+        /// <summary>
+        /// Sends a packet to all connected clients.
+        /// </summary>
+        /// <param name="msg">The message to be to all clients.</param>
         public void Send(string msg)
         {
             foreach(ServerClient client in _clients)
@@ -74,11 +94,19 @@ namespace CP.Networking
             }
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="msg"></param>
         public void SendToClient(int id, string msg)
         {
             throw new NotImplementedException();
         }
 
+        /// <summary>
+        /// Closes all existing client connections and shuts down the server listener.
+        /// </summary>
         public void Close()
         {
             for(int i = 0; i < ClientCount;)

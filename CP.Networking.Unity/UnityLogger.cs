@@ -21,5 +21,10 @@ namespace CP.Networking.Unity
         {
             Debug.Log(Loggers.Logger.GetCurrentTime() + " " + level.ToString() + ": " + message + "\n" + exception);
         }
+
+        public static void SetupUnityLogger()
+        {
+            Loggers.Logger.DefaultLogger = new UnityLogger();
+        }
     }
 }

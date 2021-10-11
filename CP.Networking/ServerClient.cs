@@ -23,16 +23,5 @@ namespace CP.Networking
 
             _stream.BeginRead(_buffer, 0, _bufferSize, Receive, null);
         }
-
-        public override void Connect()
-        {
-
-        }
-
-        public override void Disconnect()
-        {
-            base.Disconnect();
-            _server.RemoveClient(this);
-        }
     }
 }

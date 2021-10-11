@@ -20,15 +20,22 @@ namespace CP.Networking.Tests
                 Console.WriteLine("Establishing a client connection.");
 
                 client = new Client("127.0.0.1", 43435);
-                client.Connect();
+                client.onConnect += () => { 
+                    Loggers.Logger.Log("Established a connection to the server.");
+                    timer = new Timer(a => { client.Send("Ping"); }, null, TimeSpan.FromMilliseconds(0), TimeSpan.FromMilliseconds(100));
+                };
+                client.onDisconnect += () =>
+                {
+                    Loggers.Logger.Log("Connection to the server has been lost.");
+                    timer.Dispose();
+                    timer = null;
+                    client = null;
+                };
 
-                timer = new Timer(a => { client.Send("Ping"); }, null, TimeSpan.FromMilliseconds(0), TimeSpan.FromMilliseconds(100));
+                client.Connect();
             } else
             {
                 client.Disconnect();
-                timer.Dispose();
-                timer = null;
-                client = null;
             }
             
             return true;

@@ -1,16 +1,21 @@
 ﻿using CP.Networking.Loggers;
 using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
 using System.Net.Sockets;
 using System.Text;
-using System.Threading;
 
 namespace CP.Networking
 {
     public class Client
     {
+        /// <summary>
+        /// An action fired when the Client successfully connects to the server.
+        /// </summary>
+        public Action onConnect;
+        /// <summary>
+        /// An action that is fired when the Client gets disconnected from the server.
+        /// </summary>
+        public Action onDisconnect;
+
         private string _host;
         private int _port;
         protected TcpClient _client;
@@ -22,6 +27,12 @@ namespace CP.Networking
 
         protected Client() { }
 
+        /// <summary>
+        /// Initialises a new Client instance with the provided host and port.
+        /// </summary>
+        /// <param name="host">The hostname/IP address that the Client will connect to.</param>
+        /// <param name="port">The port that the Client will connect through.</param>
+        /// <param name="bufferSize">The size of the buffer for incoming and outgoing messages.</param>
         public Client(string host, int port, int bufferSize = 16384) 
         {
             _host = host;
@@ -32,6 +43,9 @@ namespace CP.Networking
             _buffer = new byte[_bufferSize];
         }
 
+        /// <summary>
+        /// Connects the Client to the server with the host and port provided in the constructor.
+        /// </summary>
         public virtual void Connect()
         {
             if (!_client.Connected)
@@ -45,6 +59,7 @@ namespace CP.Networking
 
                     _stream = _client.GetStream();
 
+                    onConnect?.Invoke();
                     _stream.BeginRead(_buffer, 0, _bufferSize, Receive, null);
                 }
                 catch (Exception ex)
@@ -54,13 +69,25 @@ namespace CP.Networking
             }
         }
 
+        /// <summary>
+        /// Disconnects the Client from the server.
+        /// </summary>
         public virtual void Disconnect()
         {
-            _stream.Close();
-            _client.Close();
-            _client.Dispose();
+            if(_client != null && _client.Connected)
+            {
+                _stream.Close();
+                _client.Close();
+                _client.Dispose();
+
+                onDisconnect?.Invoke();
+            }
         }
 
+        /// <summary>
+        /// Sends a packet to the server.
+        /// </summary>
+        /// <param name="msg">The message to send in the packet.</param>
         public void Send(string msg)
         {
             if (!_client.Connected) return;
@@ -75,7 +102,7 @@ namespace CP.Networking
             }
         }
 
-        public void Receive(IAsyncResult ar)
+        protected void Receive(IAsyncResult ar)
         {
             try
             {
@@ -83,8 +110,6 @@ namespace CP.Networking
                 if (byteLength <= 0)
                 {
                     Disconnect();
-                    //TODO: Add a connection ended function for easily handling disconnects, Callbacks are most likely.
-                    Logger.Log("Disconnected from the server!");
                     return;
                 }
 

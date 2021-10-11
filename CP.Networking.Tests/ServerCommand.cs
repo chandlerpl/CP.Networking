@@ -20,12 +20,12 @@ namespace CP.Networking.Tests
                 Loggers.Logger.Log("Establishing a server connection.");
 
                 server = new Server(43435, 2);
-
+                
                 timer = new Timer(a => { Loggers.Logger.Log("Connected Clients: " + server.ClientCount); }, null, TimeSpan.FromMilliseconds(0), TimeSpan.FromSeconds(1));
             } else
             {
-                timer.Dispose();
                 server.Close();
+                timer.Dispose();
                 server = null;
                 timer = null;
             }
