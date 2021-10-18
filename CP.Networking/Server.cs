@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
-using System.Text;
+using System.Threading.Tasks;
 
 namespace CP.Networking
 {
@@ -21,6 +21,9 @@ namespace CP.Networking
         private int _maxClients;
         private int _port;
         private int _bufferSize;
+
+        public bool UseEncryption { get; set; } = false;
+        public bool Compression { get; set; } = false;
 
         private List<ServerClient> _clients;
         public int ClientCount {  get { return _clients.Count; } }
@@ -40,35 +43,49 @@ namespace CP.Networking
             _server = new TcpListener(IPAddress.Parse("127.0.0.1"), port);
             _server.Start();
 
-            _server.BeginAcceptTcpClient(AcceptClient, null);
+            Task.Factory.StartNew(() => AcceptClient());
         }
 
-        protected void AcceptClient(IAsyncResult ar)
+        protected void AcceptClient()
         {
-            try
+            while(true)
             {
-                TcpClient client = _server.EndAcceptTcpClient(ar);
-                _server.BeginAcceptTcpClient(AcceptClient, null);
-
-                if (_clients.Count < _maxClients)
+                try
                 {
-                    ServerClient sClient = new ServerClient(this, client, _bufferSize);
-                    sClient.onDisconnect += () => { RemoveClient(sClient); };
+                    TcpClient client = _server.AcceptTcpClient();
 
-                    onClientConnected?.Invoke();
-
-                    _clients.Add(sClient);
+                    Task.Factory.StartNew(() => ConnectClient(client));
                 }
-                else
+                catch (ObjectDisposedException ex) { }
+                catch(SocketException ex)
                 {
-                    client.Close();
-                    client.Dispose();
+                    Close();
+                    break;
+                }
+                catch (Exception ex)
+                {
+                    Logger.Log(ex);
+                    Close();
+                    break;
                 }
             }
-            catch (ObjectDisposedException ex) { }
-            catch (Exception ex)
+        }
+
+        private void ConnectClient(TcpClient client)
+        {
+            if (_clients.Count < _maxClients)
             {
-                Logger.Log(ex);
+                ServerClient sClient = new ServerClient(this, client, _bufferSize);
+                sClient.onDisconnect += () => { RemoveClient(sClient); };
+
+                onClientConnected?.Invoke();
+
+                _clients.Add(sClient);
+            }
+            else
+            {
+                client.Close();
+                client.Dispose();
             }
         }
 

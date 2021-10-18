@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Net.Sockets;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace CP.Networking
 {
@@ -19,9 +20,9 @@ namespace CP.Networking
             _stream = _client.GetStream();
 
             _bufferSize = bufferSize;
-            _buffer = new byte[_bufferSize];
+            _receiveBuffer = new byte[_bufferSize];
 
-            _stream.BeginRead(_buffer, 0, _bufferSize, Receive, null);
+            Task.Factory.StartNew(() => Receive());
         }
     }
 }

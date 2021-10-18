@@ -1,4 +1,5 @@
 ﻿using CP.Common.Commands;
+using CP.Networking.Packets;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -19,11 +20,13 @@ namespace CP.Networking.Tests
             {
                 Loggers.Logger.Log("Establishing a server connection.");
 
+                PacketManager.RegisterPacket(new ServerPingPacket());
                 server = new Server(43435, 2);
                 
                 timer = new Timer(a => { Loggers.Logger.Log("Connected Clients: " + server.ClientCount); }, null, TimeSpan.FromMilliseconds(0), TimeSpan.FromSeconds(1));
             } else
             {
+                PacketManager.UnregisterPacket(0);
                 server.Close();
                 timer.Dispose();
                 server = null;

@@ -1,7 +1,13 @@
-﻿using CP.Networking.Loggers;
+﻿using CP.Networking.DataHandler;
+using CP.Networking.Loggers;
 using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Net.Sockets;
+using System.Security.Cryptography;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace CP.Networking
 {
@@ -19,11 +25,20 @@ namespace CP.Networking
         private string _host;
         private int _port;
         protected TcpClient _client;
-        protected NetworkStream _stream;
+        protected Stream _stream;
+        protected IDataHandler _handler;
+        public IDataHandler DataHandler { 
+        get {
+                if (_handler == null)
+                    _handler = new DefaultDataHandler();
+
+                return _handler;
+            }
+            set => _handler = value; 
+        }
 
         protected int _bufferSize;
-        protected byte[] _buffer;
-        protected ASCIIEncoding _encoding = new ASCIIEncoding();
+        protected byte[] _receiveBuffer;
 
         protected Client() { }
 
@@ -33,14 +48,15 @@ namespace CP.Networking
         /// <param name="host">The hostname/IP address that the Client will connect to.</param>
         /// <param name="port">The port that the Client will connect through.</param>
         /// <param name="bufferSize">The size of the buffer for incoming and outgoing messages.</param>
-        public Client(string host, int port, int bufferSize = 16384) 
+        public Client(string host, int port, int bufferSize = 16384, IDataHandler handler = null) 
         {
             _host = host;
             _port = port;
             _bufferSize = bufferSize;
+            _handler = handler;
             _client = new TcpClient();
-            
-            _buffer = new byte[_bufferSize];
+
+            _receiveBuffer = new byte[_bufferSize];
         }
 
         /// <summary>
@@ -53,14 +69,13 @@ namespace CP.Networking
                 try
                 {
                     _client.Connect(_host, _port);
-
                     _client.ReceiveBufferSize = _bufferSize;
                     _client.SendBufferSize = _bufferSize;
 
                     _stream = _client.GetStream();
 
+                    Task.Factory.StartNew(() => Receive());
                     onConnect?.Invoke();
-                    _stream.BeginRead(_buffer, 0, _bufferSize, Receive, null);
                 }
                 catch (Exception ex)
                 {
@@ -74,7 +89,7 @@ namespace CP.Networking
         /// </summary>
         public virtual void Disconnect()
         {
-            if(_client != null && _client.Connected)
+            if(_client != null)
             {
                 _stream.Close();
                 _client.Close();
@@ -85,45 +100,67 @@ namespace CP.Networking
         }
 
         /// <summary>
-        /// Sends a packet to the server.
+        /// Sends a string through the network stream.
         /// </summary>
         /// <param name="msg">The message to send in the packet.</param>
         public void Send(string msg)
         {
             if (!_client.Connected) return;
 
+            byte[] data = Encoding.UTF8.GetBytes(msg);
+            Send(data);
+        }
+
+        public void Send(ByteBuffer buffer)
+        {
+            if (!_client.Connected) return;
+
+            byte[] data = buffer.GetBuffer();
+            Send(data);
+        }
+
+        public void Send(byte[] data)
+        {
+            if (!_client.Connected) return;
+
+            data = DataHandler.Prepare(data);
             try
             {
-                byte[] data = _encoding.GetBytes(msg);
-                _stream.BeginWrite(data, 0, data.Length, null, null);
-            }  catch(Exception ex)
+                var _ = _stream.WriteAsync(data, 0, data.Length);
+            }
+            catch (Exception ex)
             {
                 Logger.Log("Error sending message.", ex);
             }
         }
 
-        protected void Receive(IAsyncResult ar)
+        protected async Task Receive()
         {
-            try
+            while(true)
             {
-                int byteLength = _stream.EndRead(ar);
-                if (byteLength <= 0)
+                try
                 {
-                    Disconnect();
-                    return;
+                    int byteLength = await _stream.ReadAsync(_receiveBuffer, 0, _bufferSize);
+                    if (byteLength <= 0)
+                    {
+                        Disconnect();
+                        break;
+                    }
+                    byte[] info = new byte[byteLength];
+                    Array.Copy(_receiveBuffer, 0, info, 0, byteLength);
+
+                    DataHandler.Handle(this, info);
                 }
+                catch (Exception ex)
+                {
+                    if(ex is ObjectDisposedException || ex is SocketException || ex is IOException)
+                    {
+                        Disconnect();
+                        break;
+                    }
 
-                string s = _encoding.GetString(_buffer, 0, byteLength);
-
-                //TODO: Add a proper system for handling incoming messages, command system seems most plausible.
-                Logger.Log(s);
-
-                _stream.BeginRead(_buffer, 0, _bufferSize, Receive, null);
-            } 
-            catch(ObjectDisposedException ex) { }
-            catch (Exception ex)
-            {
-                Logger.Log("Error receiving data.", ex);
+                    Logger.Log("Error receiving data.", ex);
+                }
             }
         }
     }
