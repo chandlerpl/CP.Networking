@@ -1,6 +1,9 @@
-﻿using System;
+﻿using CP.Networking.Loggers;
+using System;
 using System.Collections.Generic;
+using System.IO.Compression;
 using System.Net.Sockets;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -22,6 +25,7 @@ namespace CP.Networking
             _bufferSize = bufferSize;
             _receiveBuffer = new byte[_bufferSize];
 
+            onConnect?.Invoke();
             Task.Factory.StartNew(() => Receive());
         }
     }

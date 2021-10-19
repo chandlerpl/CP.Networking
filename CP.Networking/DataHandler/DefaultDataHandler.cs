@@ -14,33 +14,33 @@ namespace CP.Networking.DataHandler
         /// </summary>
         public List<byte> messageBuffer = new List<byte>();
 
-        private static readonly byte[] MESSAGE_END = Encoding.UTF8.GetBytes("$");
-        private static readonly int MESSAGE_END_LENGTH = MESSAGE_END.Length;
-
         public void Handle(Client client, byte[] data)
         {
-            int len = data.Length;
-            string val;
+            if(messageBuffer.Count != 0)
+            {
+                messageBuffer.AddRange(data);
+                data = messageBuffer.ToArray();
+                messageBuffer.Clear();
+            }
+
+            ByteBuffer buffer = new ByteBuffer(data);
+            int length;
             try
             {
-                val = Encoding.UTF8.GetString(data, len - MESSAGE_END_LENGTH, MESSAGE_END_LENGTH);
+                length = buffer.ReadVarInt(out int varLen);
 
-                if(val != "$")
+                if(data.Length != length + varLen)
                 {
                     messageBuffer.AddRange(data);
-                    return;
+                    Logger.Log("Invalid Packet: " + data.Length + " Expected: " + (length + varLen));
                 }
-            } catch (Exception ex)
+            } catch (IOException ex)
             {
                 Logger.Log(ex);
                 messageBuffer.AddRange(data);
                 return;
             }
 
-            ByteBuffer buffer = new ByteBuffer();
-            buffer.SetBuffer(data);
-
-            int length = buffer.ReadVarInt();
             int packetId = buffer.ReadVarInt();
 
             PacketManager.HandlePacket(packetId, client, buffer);
@@ -50,25 +50,10 @@ namespace CP.Networking.DataHandler
         {
             List<byte> rData = new List<byte>();
 
-            rData.AddRange(WriteVarInt(data.Length + MESSAGE_END_LENGTH));
+            rData.AddRange(data.Length.ToVarIntArray(out int _));
             rData.AddRange(data);
-            rData.AddRange(MESSAGE_END);
 
             return rData.ToArray();
-        }
-
-        private byte[] WriteVarInt(int value)
-        {
-            List<byte> buffer = new List<byte>(5);
-
-            while ((value & 128) != 0)
-            {
-                buffer.Add((byte)(value & 127 | 128));
-                value = (int)((uint)value) >> 7;
-            }
-            buffer.Add((byte)value);
-
-            return buffer.ToArray();
         }
     }
 }

@@ -1,8 +1,11 @@
 ﻿using CP.Networking.DataHandler;
 using CP.Networking.Loggers;
+using CP.Networking.Packets;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Compression;
+using System.Net.Security;
 using System.Net.Sockets;
 using System.Security.Cryptography;
 using System.Text;
@@ -27,7 +30,7 @@ namespace CP.Networking
         protected TcpClient _client;
         protected Stream _stream;
         protected IDataHandler _handler;
-        public IDataHandler DataHandler { 
+        public IDataHandler DataHandler {
         get {
                 if (_handler == null)
                     _handler = new DefaultDataHandler();
@@ -74,21 +77,8 @@ namespace CP.Networking
 
                     _stream = _client.GetStream();
 
-                    /* 
-                     * Create a VariableLength extension class which contains the implementations of VarInt and VarLong
-                     * Change here to begin a hardcoded Handshake task, steps to take:
-                     * C -> S: containing information for handshake, maybe need a handler for this?
-                     * S -> C: Respond to above, containing IsEncrypted(bool)IsCompressed(bool)
-                     * ONLY IF ENCRPYTION ON:
-                     * S -> C: (length of public key)(publickey)(length of IV)(IV) <- attached to the packet above.
-                     * C -> S: Returns an RSA encrypted AES Key and IV, enabling encryption for both
-                     * S -> C: Login success
-                     * 
-                     * Both begin listening to Receive.
-                     */
-
-                    Task.Factory.StartNew(() => Receive());
                     onConnect?.Invoke();
+                    Task.Factory.StartNew(() => Receive());
                 }
                 catch (Exception ex)
                 {

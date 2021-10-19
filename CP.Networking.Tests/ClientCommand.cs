@@ -21,7 +21,7 @@ namespace CP.Networking.Tests
                 Console.WriteLine("Establishing a client connection.");
 
                 client = new Client("127.0.0.1", 43435);
-                client.onConnect += () => { 
+                client.onConnect += () => {
                     Loggers.Logger.Log("Established a connection to the server.");
                     timer = new Timer(a => {
                         ClientPingPacket ping = new();

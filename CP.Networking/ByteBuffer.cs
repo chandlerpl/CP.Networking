@@ -10,6 +10,16 @@ namespace CP.Networking
         protected List<byte> _buffer = new List<byte>();
         protected int _offset = 0;
 
+        public ByteBuffer()
+        {
+
+        }
+
+        public ByteBuffer(byte[] buffer)
+        {
+            SetBuffer(buffer);
+        }
+
         public void SetBuffer(byte[] buffer)
         {
             _buffer.Clear();
@@ -40,54 +50,39 @@ namespace CP.Networking
 
         public void WriteVarInt(int value)
         {
-            while ((value & 0xFFFFFF80) != 0)
-            {
-                _buffer.Add((byte)(value & 0x7F | 0x80));
-                value = (int)((uint)value) >> 7;
-            }
-            _buffer.Add((byte)value);
+            _buffer.AddRange(value.ToVarIntArray(out _));
         }
+
 
         public int ReadVarInt()
         {
-            var value = 0;
-            var size = 0;
-            int b;
-            while (((b = ReadByte()) & 0x80) == 0x80)
-            {
-                value |= (b & 0x7F) << (size++ * 7);
-                if (size > 5)
-                {
-                    throw new IOException("This VarInt is an imposter!");
-                }
-            }
-            return value | ((b & 0x7F) << (size * 7));
+            return ReadVarInt(out _);
+        }
+
+        public int ReadVarInt(out int length)
+        {
+            int value = _buffer.GetVarInt(_offset, out length);
+            _offset += length;
+
+            return value;
         }
 
         public void WriteVarLong(long value)
         {
-            while (((ulong)value & 0xFFFFFFFFFFFFFF80) != 0)
-            {
-                _buffer.Add((byte)(value & 0x7F | 0x80));
-                value = (long)((ulong)value) >> 7;
-            }
-            _buffer.Add((byte)value);
+            _buffer.AddRange(value.ToVarLongArray(out _));
         }
-
+        
         public long ReadVarLong()
         {
-            long value = 0;
-            int size = 0;
-            byte b;
-            while (((b = ReadByte()) & 0x80) == 0x80)
-            {
-                value |= (b & (long)0x7F) << (size++ * 7);
-                if (size > 10)
-                {
-                    throw new IOException("This VarInt is an imposter!");
-                }
-            }
-            return value | ((b & (long)0x7F) << (size * 7));
+            return ReadVarLong(out _);
+        }
+
+        public long ReadVarLong(out int length)
+        {
+            long value = _buffer.GetVarLong(_offset, out length);
+            _offset += length;
+
+            return value;
         }
 
         public void WriteShort(short value)
