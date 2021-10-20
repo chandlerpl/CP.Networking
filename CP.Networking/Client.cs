@@ -67,12 +67,14 @@ namespace CP.Networking
         /// </summary>
         public virtual void Connect()
         {
+            if (_client == null)
+                _client = new TcpClient();
+
             if (!_client.Connected)
             {
                 try
                 {
                     _client.Connect(_host, _port);
-                    _client.ReceiveBufferSize = _bufferSize;
                     _client.SendBufferSize = _bufferSize;
 
                     _stream = _client.GetStream();
@@ -97,6 +99,8 @@ namespace CP.Networking
                 _stream.Close();
                 _client.Close();
                 _client.Dispose();
+
+                _client = null;
 
                 onDisconnect?.Invoke();
             }

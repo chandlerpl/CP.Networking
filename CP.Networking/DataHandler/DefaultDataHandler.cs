@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace CP.Networking.DataHandler
 {
@@ -27,12 +28,23 @@ namespace CP.Networking.DataHandler
             int length;
             try
             {
-                length = buffer.ReadVarInt(out int varLen);
+                length = buffer.ReadVarInt(out int varLen) + varLen;
 
-                if(data.Length != length + varLen)
+                if (data.Length < length)
                 {
                     messageBuffer.AddRange(data);
                     Logger.Log("Invalid Packet: " + data.Length + " Expected: " + (length + varLen));
+                    return;
+                } else if(data.Length > length)
+                {
+                    byte[] firstData = new byte[length];
+                    Array.Copy(data, 0, firstData, 0, length);
+                    byte[] secondData = new byte[data.Length - length];
+                    Array.Copy(data, length, secondData, 0, data.Length - length);
+
+                    data = firstData;
+                    Task.Factory.StartNew(() => Handle(client, secondData));
+                    return;
                 }
             } catch (IOException ex)
             {

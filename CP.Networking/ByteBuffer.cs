@@ -132,9 +132,9 @@ namespace CP.Networking
             _buffer.Add((byte)value);
         }
 
-        public int ReadLong()
+        public long ReadLong()
         {
-            return (ReadByte() << 56) | (ReadByte() << 48) | (ReadByte() << 40) | (ReadByte() << 32) | (ReadByte() << 24) | (ReadByte() << 16) | (ReadByte() << 8) | ReadByte();
+            return ((long)ReadByte() << 56) | ((long)ReadByte() << 48) | ((long)ReadByte() << 40) | ((long)ReadByte() << 32) | ((long)ReadByte() << 24) | ((long)ReadByte() << 16) | ((long)ReadByte() << 8) | ReadByte();
         }
 
         public void WriteBool(bool value)
@@ -235,6 +235,11 @@ namespace CP.Networking
             Array.Copy(_buffer.ToArray(), _offset, data, 0, length);
             _offset += length;
             return data;
+        }
+
+        public override string ToString()
+        {
+            return Encoding.UTF8.GetString(_buffer.ToArray());
         }
     }
 }

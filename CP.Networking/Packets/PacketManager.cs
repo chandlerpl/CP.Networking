@@ -1,4 +1,5 @@
-﻿using System;
+﻿using CP.Networking.Loggers;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -15,6 +16,10 @@ namespace CP.Networking.Packets
             if(registeredPackets.ContainsKey(id))
             {
                 registeredPackets[id].Handle(client, buffer);
+            }
+            else
+            {
+                Logger.Log("Unhandled packet! ID: + " + id + " \nData: " + buffer.ToString());
             }
         }
 
