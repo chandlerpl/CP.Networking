@@ -57,8 +57,8 @@ namespace CP.Networking
             _port = port;
             _bufferSize = bufferSize;
             _handler = handler;
-            _client = new TcpClient();
-
+            _client = new TcpClient(AddressFamily.InterNetwork);
+            
             _receiveBuffer = new byte[_bufferSize];
         }
 

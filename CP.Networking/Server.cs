@@ -40,7 +40,9 @@ namespace CP.Networking
             _maxClients = maxClients;
             _clients = new List<ServerClient>(maxClients);
 
-            _server = new TcpListener(IPAddress.Parse("127.0.0.1"), port);
+            _server = new TcpListener(IPAddress.Any, port);
+            _server.AllowNatTraversal(true);
+
             _server.Start();
 
             Task.Factory.StartNew(() => AcceptClient());
