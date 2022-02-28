@@ -67,6 +67,9 @@ namespace CP.Networking
         /// </summary>
         public virtual void Connect()
         {
+            if (_host == null || _port == 0)
+                return;
+
             if (_client == null)
                 _client = new TcpClient();
 
@@ -87,6 +90,19 @@ namespace CP.Networking
                     Logger.Log(ex);
                 }
             }
+        }
+
+        public virtual void Connect(string host, int port, int bufferSize = 16384, IDataHandler handler = null)
+        {
+            _host = host;
+            _port = port;
+            _bufferSize = bufferSize;
+            _handler = handler;
+            _client = new TcpClient(AddressFamily.InterNetwork);
+
+            _receiveBuffer = new byte[_bufferSize];
+
+            Connect();
         }
 
         /// <summary>

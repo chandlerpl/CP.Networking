@@ -15,7 +15,7 @@
 
   <ItemGroup>
     <Reference Include="CP.Common">
-      <HintPath>..\..\..\..\Desktop\CP Repos\netstandard2.0\CP.Common.dll</HintPath>
+      <HintPath>..\..\chandlerpl\CPLibrary\CP.Common\bin\Release\netstandard2.0\CP.Common.dll</HintPath>
     </Reference>
   </ItemGroup>
 

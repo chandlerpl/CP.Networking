@@ -20,7 +20,7 @@ namespace CP.Networking.Tests
             {
                 Console.WriteLine("Establishing a client connection.");
 
-                client = new Client("192.168.0.32", 43435);
+                client = new Client("86.30.16.117", 43435);
                 client.onConnect += () => {
                     Loggers.Logger.Log("Established a connection to the server.");
                     timer = new Timer(a => {

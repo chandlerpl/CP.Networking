@@ -23,7 +23,6 @@ namespace CP.Networking.Tests
             ServerPingPacket ping = new();
             ping.PingTime = timestamp;
 
-            Loggers.Logger.Log(timestamp + "");
             client.Send(ping.Write());
         }
 
