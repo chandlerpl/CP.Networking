@@ -113,6 +113,14 @@ namespace CP.Networking
             }
         }
 
+        public void Send(ByteBuffer msg)
+        {
+            foreach (ServerClient client in _clients)
+            {
+                client.Send(msg);
+            }
+        }
+
         /// <summary>
         /// 
         /// </summary>

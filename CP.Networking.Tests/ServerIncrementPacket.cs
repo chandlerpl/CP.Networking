@@ -7,29 +7,28 @@ using CP.Networking.Packets;
 
 namespace CP.Networking.Tests
 {
-    public class ClientPingPacket : Packet
+    public class ServerIncrementPacket : Packet
     {
-        public long PingTime { get; set; }
+        public int Number { get; set; }
 
         public override int getId()
         {
-            return 0;
+            return 1;
         }
 
         public override void Handle(Client client, ByteBuffer buffer)
         {
-            long timestamp = buffer.ReadVarLong();
+            Number += buffer.ReadVarInt();
 
-            long currTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
-
-            Loggers.Logger.Log(Loggers.LogLevel.INFO, "Ping: " + (currTime - timestamp) + "ms");
+            ServerCommand.server.Send(Write());
+            Loggers.Logger.Log("Sending increment packet");
         }
 
         public override ByteBuffer Write()
         {
-            ByteBuffer buffer = new();
+            ByteBuffer buffer = new ByteBuffer();
             buffer.WriteVarInt(getId());
-            buffer.WriteVarLong(-54764325);
+            buffer.WriteVarInt(Number);
 
             return buffer;
         }

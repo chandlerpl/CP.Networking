@@ -11,7 +11,7 @@ namespace CP.Networking.Tests
 {
     public class ServerCommand : Command
     {
-        Server server;
+        public static Server server;
         Timer timer;
 
         public override bool Execute(object obj, List<string> args)
@@ -21,12 +21,14 @@ namespace CP.Networking.Tests
                 Loggers.Logger.Log("Establishing a server connection.");
 
                 PacketManager.RegisterPacket(new ServerPingPacket());
+                PacketManager.RegisterPacket(new ServerIncrementPacket());
                 server = new Server(43435, 2);
                 
                 timer = new Timer(a => { Loggers.Logger.Log("Connected Clients: " + server.ClientCount); }, null, TimeSpan.FromMilliseconds(0), TimeSpan.FromSeconds(1));
             } else
             {
                 PacketManager.UnregisterPacket(0);
+                PacketManager.UnregisterPacket(1);
                 server.Close();
                 timer.Dispose();
                 server = null;

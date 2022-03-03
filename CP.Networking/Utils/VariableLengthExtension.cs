@@ -64,6 +64,8 @@ public static class VariableLengthExtension
 
         while (((ulong)value & 0xFFFFFFFFFFFFFF80) != 0)
         {
+            Console.WriteLine("{0:X}", value);
+            Console.WriteLine((ulong)value & 0xFFFFFFFFFFFFFF80);
             result.Add((byte)(value & 0x7F | 0x80));
             value = (long)((ulong)value) >> 7;
             ++length;
